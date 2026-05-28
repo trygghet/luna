@@ -1,0 +1,211 @@
+<div class="history-container">
+  <!-- 標題 -->
+  <header class="history-header">
+    <h1>� 月經日曆</h1>
+    <p class="subtitle">追蹤你的月經週期</p>
+  </header>
+
+  <!-- 日曆區域 -->
+  <section class="calendar-section">
+    <!-- 月份控制 -->
+    <div class="calendar-controls">
+      <button class="btn-month" (click)="previousMonth()" title="上一個月">
+        <i class="fas fa-chevron-left"></i>
+      </button>
+      <div class="month-display">{{ getMonthYearDisplay() }}</div>
+      <button class="btn-month" (click)="nextMonth()" title="下一個月">
+        <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- 星期標題 -->
+    <div class="calendar-weekdays">
+      <div class="weekday">日</div>
+      <div class="weekday">一</div>
+      <div class="weekday">二</div>
+      <div class="weekday">三</div>
+      <div class="weekday">四</div>
+      <div class="weekday">五</div>
+      <div class="weekday">六</div>
+    </div>
+
+    <!-- 日期網格 -->
+    <div class="calendar-grid">
+      <div
+        *ngFor="let day of calendarDays; let i = index"
+        class="calendar-day"
+        [class.current-month]="isCurrentMonth(i)"
+        [class.other-month]="!isCurrentMonth(i)"
+        [class.has-flow]="isCurrentMonth(i) && hasPeriodFlow(day!)"
+        [class.selected]="isCurrentMonth(i) && isSelectedDay(day!)"
+        [class.next-period]="isCurrentMonth(i) && isNextPeriodDay(day!)"
+        [ngClass]="isCurrentMonth(i) && getFlowLevel(day!)"
+        (click)="selectDay(day!, isCurrentMonth(i))"
+      >
+        <div class="day-number">{{ day }}</div>
+        <div *ngIf="isCurrentMonth(i) && hasPeriodFlow(day!)" class="flow-indicator">
+          <i class="fas fa-droplet"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- 圖例 -->
+    <div class="calendar-legend">
+      <div class="legend-item">
+        <div class="legend-box flow-light"></div>
+        <span>少</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box flow-medium"></div>
+        <span>正常</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box flow-heavy"></div>
+        <span>多</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-box next-period-box"></div>
+        <span>預估月經日</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 每日紀錄表單 -->
+  <section class="daily-log-section" *ngIf="selectedDate">
+    <h2>📝 {{ selectedDate }} 的紀錄</h2>
+    <div class="log-form">
+      <!-- 流量選擇 -->
+      <div class="form-group">
+        <label>月經流量</label>
+        <div class="flow-radio-group">
+          <label *ngFor="let option of flowOptions" class="radio-label">
+            <input
+              type="radio"
+              [value]="option.value"
+              [(ngModel)]="selectedDayLog.flow"
+              name="flow"
+            />
+            <span class="radio-label-text">{{ option.label }}</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- 備註 -->
+      <div class="form-group">
+        <label for="note">備註</label>
+        <textarea
+          id="note"
+          [(ngModel)]="selectedDayLog.note"
+          name="note"
+          placeholder="e.g. 腹痛、情緒變化、其他症狀..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <!-- 按鈕組 -->
+      <div class="button-group">
+        <button class="btn-save" (click)="saveDailyLog()">
+          <i class="fas fa-save"></i> 儲存紀錄
+        </button>
+        <button class="btn-cancel" (click)="clearSelection()">
+          <i class="fas fa-times"></i> 取消
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 提示文字 -->
+  <div *ngIf="!selectedDate" class="empty-hint">
+    <i class="fas fa-pointer"></i>
+    <p>點擊日曆上的日期開始記錄</p>
+  </div>
+</div>
+
+  <!-- 新一筆紀錄表單 -->
+  <section class="add-record-section">
+    <h2>✚ 添加新記錄</h2>
+    <form class="record-form" (ngSubmit)="submitForm()">
+      <div class="form-group">
+        <label for="startDate">月經開始日期</label>
+        <input
+          id="startDate"
+          type="date"
+          [(ngModel)]="newRecord.startDate"
+          name="startDate"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="endDate">月經結束日期</label>
+        <input
+          id="endDate"
+          type="date"
+          [(ngModel)]="newRecord.endDate"
+          name="endDate"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="volume">月經量</label>
+        <select
+          id="volume"
+          [(ngModel)]="newRecord.volume"
+          name="volume"
+          required
+        >
+          <option value="light">輕</option>
+          <option value="medium">中</option>
+          <option value="heavy">多</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="note">備註 (可選)</label>
+        <textarea
+          id="note"
+          [(ngModel)]="newRecord.note"
+          name="note"
+          placeholder="e.g. 月經不規律、水紅量大、痛楚..."
+          rows="3"
+        ></textarea>
+      </div>
+
+      <button type="submit" class="btn-submit">
+        <i class="fas fa-check"></i> 設定記錄
+      </button>
+    </form>
+  </section>
+
+  <!-- 月經歷史記錄列表 -->
+  <section class="records-section">
+    <h2>✨ 歷史記錄</h2>
+    <div *ngIf="records.length === 0" class="empty-state">
+      <i class="fas fa-inbox"></i>
+      <p>目前沒有記錄，請添加你的第一筆記錄。</p>
+    </div>
+    <div *ngIf="records.length > 0" class="records-list">
+      <div *ngFor="let record of records" class="record-card">
+        <div class="record-header">
+          <div class="record-dates">
+            <span class="date-badge start">
+              <i class="fas fa-circle-dot"></i> {{ record.startDate }}
+            </span>
+            <span class="date-separator">→</span>
+            <span class="date-badge end">
+              {{ record.endDate }}
+            </span>
+          </div>
+          <span class="volume-badge" [attr.data-volume]="record.volume">
+            {{ getVolumeLabel(record.volume) }}
+          </span>
+        </div>
+        <p *ngIf="record.note" class="record-note">
+          <i class="fas fa-sticky-note"></i> {{ record.note }}
+        </p>
+      </div>
+    </div>
+  </section>
+</div>
+

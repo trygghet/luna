@@ -1,0 +1,210 @@
+/* LunaFlow App Styles */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-bg-primary);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  padding-bottom: 90px; /* Space for fixed bottom nav */
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Bottom Navigation Bar */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: var(--spacing-2);
+  
+  background-color: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  
+  padding: var(--spacing-3) 0;
+  z-index: var(--z-fixed);
+  
+  /* 玻璃態效果 */
+  backdrop-filter: blur(10px);
+  background-color: rgba(26, 26, 46, 0.95);
+  
+  /* 簡化於小螢幕 */
+  @media (max-width: 480px) {
+    padding: var(--spacing-2) 0;
+    gap: var(--spacing-1);
+  }
+}
+
+/* Navigation Links */
+.nav-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  
+  flex: 1;
+  padding: var(--spacing-3);
+  
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  
+  transition: all var(--transition-fast);
+  position: relative;
+  
+  /* 圖示樣式 */
+  i {
+    font-size: 1.5rem;
+    transition: all var(--transition-fast);
+  }
+  
+  /* 文字標籤 */
+  .nav-label {
+    white-space: nowrap;
+    font-size: var(--font-size-xs);
+  }
+  
+  /* Hover 狀態 */
+  &:hover {
+    color: var(--color-primary);
+    transform: translateY(-2px);
+    
+    i {
+      transform: scale(1.1);
+    }
+  }
+  
+  /* Active 狀態（當前頁面） */
+  &.active {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+    
+    i {
+      font-size: 1.75rem;
+    }
+    
+    /* 活躍指示器 - 上方竖線 */
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      
+      width: 40%;
+      height: 3px;
+      background: linear-gradient(
+        90deg,
+        var(--color-primary) 0%,
+        var(--color-primary-light) 100%
+      );
+      border-radius: var(--radius-full);
+    }
+    
+    /* 珊瑚色光暈效果 */
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      background: radial-gradient(
+        circle,
+        var(--color-primary),
+        transparent
+      );
+      opacity: 0.1;
+      border-radius: var(--radius-full);
+      pointer-events: none;
+    }
+  }
+  
+  /* Active 圖示的脈衝動畫 */
+  &.active i {
+    animation: pulse-icon 0.6s ease-in-out infinite;
+  }
+  
+  /* 按壓效果 */
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* 脈衝動畫 - Active 圖示 */
+@keyframes pulse-icon {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+}
+
+/* 大螢幕媒體查詢 */
+@media (min-width: 768px) {
+  .bottom-nav {
+    padding: var(--spacing-4) 0;
+  }
+  
+  .nav-link {
+    padding: var(--spacing-4);
+    gap: var(--spacing-3);
+    
+    i {
+      font-size: 1.75rem;
+    }
+    
+    &.active i {
+      font-size: 2rem;
+    }
+    
+    .nav-label {
+      font-size: var(--font-size-sm);
+    }
+  }
+}
+
+/* 響應式 - 橫屏模式 */
+@media (max-width: 600px) and (orientation: landscape) {
+  .main-content {
+    padding-bottom: 70px;
+  }
+  
+  .bottom-nav {
+    padding: var(--spacing-2) 0;
+  }
+  
+  .nav-link {
+    padding: var(--spacing-2);
+    gap: var(--spacing-1);
+    
+    i {
+      font-size: 1.25rem;
+    }
+    
+    .nav-label {
+      display: none; /* 隱藏標籤以節省空間 */
+    }
+  }
+}

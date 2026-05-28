@@ -1,0 +1,201 @@
+/* ========================================
+   Home 組件樣式
+   ======================================== */
+
+.home-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: var(--spacing-6);
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 標題 紀 */
+.home-header {
+  text-align: center;
+  margin-bottom: var(--spacing-12);
+
+  h1 {
+    font-size: var(--font-size-4xl);
+    background: linear-gradient(
+      135deg,
+      var(--color-primary),
+      var(--color-primary-light)
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--spacing-2);
+  }
+
+  .subtitle {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* 預測卡片 */
+.prediction-card {
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-secondary),
+    var(--color-bg-tertiary)
+  );
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-2xl);
+  padding: var(--spacing-8);
+  margin-bottom: var(--spacing-10);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-8);
+
+  box-shadow: 0 8px 32px rgba(255, 107, 107, 0.15);
+  transition: all var(--transition-base);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 48px rgba(255, 107, 107, 0.25);
+  }
+
+  .card-content {
+    flex: 1;
+  }
+
+  .prediction-label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .prediction-date {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-3);
+  }
+
+  .prediction-hint {
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+  }
+
+  .card-icon {
+    font-size: 4rem;
+    color: var(--color-primary);
+    opacity: 0.2;
+  }
+}
+
+/* 統計信息 */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--spacing-6);
+  margin-bottom: var(--spacing-12);
+
+  .stat-card {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-6);
+    text-align: center;
+    transition: all var(--transition-base);
+
+    &:hover {
+      border-color: var(--color-primary);
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.1);
+    }
+
+    i {
+      font-size: 2.5rem;
+      color: var(--color-primary);
+      margin-bottom: var(--spacing-3);
+    }
+
+    h3 {
+      font-size: var(--font-size-lg);
+      margin-bottom: var(--spacing-2);
+    }
+
+    p {
+      color: var(--color-text-secondary);
+      font-size: var(--font-size-sm);
+    }
+  }
+}
+
+/* 提示區塊 */
+.tips-section {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 107, 107, 0.1),
+    rgba(255, 107, 107, 0.05)
+  );
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+
+  h2 {
+    color: var(--color-primary);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .tips-list {
+    list-style: none;
+    padding: 0;
+
+    li {
+      padding-left: var(--spacing-6);
+      margin-bottom: var(--spacing-3);
+      position: relative;
+      color: var(--color-text-primary);
+      line-height: var(--line-height-relaxed);
+
+      &::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: var(--color-primary);
+        font-weight: var(--font-weight-bold);
+      }
+    }
+  }
+}
+
+/* 響應式 設計 */
+@media (max-width: 768px) {
+  .home-container {
+    padding: var(--spacing-4);
+  }
+
+  .home-header h1 {
+    font-size: var(--font-size-3xl);
+  }
+
+  .prediction-card {
+    flex-direction: column;
+    gap: var(--spacing-4);
+
+    .card-icon {
+      font-size: 3rem;
+    }
+  }
+
+  .stats-section {
+    grid-template-columns: 1fr;
+  }
+}

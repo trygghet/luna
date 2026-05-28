@@ -11,7 +11,7 @@ import { PeriodService, DailyLog } from '../../services/period';
   selector: 'app-history',
   imports: [CommonModule, FormsModule],
   templateUrl: './history.html',
-  styleUrl: './history.scss',
+  styleUrls: ['./history.scss'],
 })
 export class History implements OnInit {
   /** 當前顯示的年份 */
@@ -195,7 +195,7 @@ export class History implements OnInit {
     const dayStr = String(day).padStart(2, '0');
     const dateStr = `${this.currentYear}-${monthStr}-${dayStr}`;
     const log = this.monthlyLogs.get(dateStr);
-    return log && log.flow !== '無';
+    return !!log && log.flow !== '無';
   }
 
   /**

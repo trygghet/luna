@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { GoogleCalendarService } from './google-calendar';
 
 /**
  * 每日流量紀錄介面
@@ -16,6 +17,8 @@ export interface DailyLog {
   providedIn: 'root',
 })
 export class PeriodService {
+  private gcalService = inject(GoogleCalendarService);
+
   /**
    * mockData 供應初始每日紀錄
    */
@@ -51,6 +54,12 @@ export class PeriodService {
     } else {
       this.mockData.push({ ...log });
     }
+
+    // 同步到 Google 日曆
+    this.gcalService.syncLog(log).then(() => {
+      const nextPredict = this.predictNextPeriod();
+      this.gcalService.syncPrediction(nextPredict);
+    });
   }
 
   /**

@@ -1,1 +1,157 @@
-<p>settings works!</p>
+<div class="settings-container animate-fade-in">
+  <header class="settings-header">
+    <h1>LunaFlow 設定</h1>
+    <p class="subtitle">個人化您的經期追蹤體驗與日曆同步選項</p>
+  </header>
+
+  <div class="settings-content">
+    <!-- Google 日曆設定卡片 -->
+    <div class="settings-card glass-card">
+      <div class="card-header">
+        <div class="header-icon">
+          <i class="fab fa-google"></i>
+        </div>
+        <div class="header-title">
+          <h2>Google 日曆整合</h2>
+          <p>將您的經期紀錄與預測同步至專屬 Google 日曆</p>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- 步驟 1: 設定 Client ID -->
+        <div class="settings-group">
+          <label for="clientIdInput" class="group-label">
+            <span class="step-badge">1</span> Google OAuth 用戶端 ID
+          </label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="clientIdInput"
+              [(ngModel)]="inputClientId"
+              placeholder="請輸入 12345-abcde.apps.googleusercontent.com"
+              [disabled]="gcalService.isConnected()"
+            />
+            <button
+              class="btn btn-secondary"
+              (click)="saveClientId()"
+              [disabled]="gcalService.isConnected() || !inputClientId"
+            >
+              更新 ID
+            </button>
+          </div>
+          <p class="input-help">
+            若您還沒有 Client ID，請至 Google Cloud Console 建立。本服務僅申請 <code>calendar.app.created</code> 最小權限，僅能管理此應用所創建的專屬日曆。
+          </p>
+        </div>
+
+        <!-- 步驟 2: 連線狀態與控制項 -->
+        <div class="settings-group">
+          <label class="group-label">
+            <span class="step-badge">2</span> 帳號連線狀態
+          </label>
+          
+          <div class="connection-status-panel" [class.connected]="gcalService.isConnected()">
+            <div class="status-indicator">
+              <span class="pulse-dot"></span>
+              <span class="status-text">
+                {{ gcalService.isConnected() ? '已連結 Google 日曆' : '未連結' }}
+              </span>
+            </div>
+            
+            <div class="auth-buttons">
+              @if (!gcalService.isConnected()) {
+                <button
+                  class="btn btn-primary btn-google"
+                  (click)="connectGoogle()"
+                  [disabled]="isSaving() || !inputClientId"
+                >
+                  <i class="fab fa-google"></i> 連結 Google 帳號
+                </button>
+              } @else {
+                <button
+                  class="btn btn-danger"
+                  (click)="disconnectGoogle()"
+                  [disabled]="isSaving()"
+                >
+                  中斷連結
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- 步驟 3: 同步設定 (僅在已連線時可用) -->
+        <div class="settings-group" [class.disabled-opacity]="!gcalService.isConnected()">
+          <label class="group-label">
+            <span class="step-badge">3</span> 同步選項設定
+          </label>
+
+          <div class="toggle-list">
+            <div class="toggle-item">
+              <div class="toggle-info">
+                <h3>同步實際經期紀錄</h3>
+                <p>將您記錄的流量與備忘錄同步為 Google 日曆的一整天活動</p>
+              </div>
+              <label class="switch">
+                <input
+                  type="checkbox"
+                  [checked]="gcalService.syncLogsEnabled()"
+                  (change)="toggleSyncLogs($event)"
+                  [disabled]="!gcalService.isConnected()"
+                />
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-item">
+              <div class="toggle-info">
+                <h3>同步預測經期</h3>
+                <p>將下一期的預估開始日期同步為 Google 日曆的一整天活動</p>
+              </div>
+              <label class="switch">
+                <input
+                  type="checkbox"
+                  [checked]="gcalService.syncPredictionsEnabled()"
+                  (change)="toggleSyncPredictions($event)"
+                  [disabled]="!gcalService.isConnected()"
+                />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 步驟 4: 一次性同步 -->
+        <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
+          <label class="group-label">
+            <span class="step-badge">4</span> 歷史紀錄手動同步
+          </label>
+          <div class="sync-action-panel">
+            <button
+              class="btn btn-success btn-large"
+              (click)="syncAllHistory()"
+              [disabled]="isSaving() || !gcalService.isConnected()"
+            >
+              <i class="fas fa-sync-alt" [class.fa-spin]="isSaving()"></i> 立即同步所有經期歷史資料
+            </button>
+            @if (syncStatusMessage()) {
+              <p class="sync-status-msg animate-fade-in">{{ syncStatusMessage() }}</p>
+            }
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 關於與說明卡片 -->
+    <div class="settings-card glass-card info-card">
+      <h3>💡 說明指南：如何取得 Client ID？</h3>
+      <ol class="guide-steps">
+        <li>前往 <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a> 並建立或選擇專案。</li>
+        <li>在 <strong>API 和服務</strong> > <strong>憑證</strong> 中，點擊「建立憑證」並選擇「OAuth 用戶端 ID」。</li>
+        <li>應用程式類型選擇「網頁應用程式」，並在「已授權的 JavaScript 來源」中加入您的本地開發 URL（例如：<code>http://localhost:4200</code>）。</li>
+        <li>建立完成後，複製產生的「用戶端 ID」貼回上方輸入框。</li>
+      </ol>
+    </div>
+  </div>
+</div>

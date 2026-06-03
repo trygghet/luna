@@ -8,7 +8,8 @@ declare const google: any;
 })
 export class GoogleCalendarService {
   // 狀態訊號 (Signals)
-  readonly clientId = signal<string>(localStorage.getItem('luna_gcal_client_id') || '');
+  // 開發者申請的 Google OAuth 用戶端 ID
+  readonly clientId = signal<string>('972944322479-7e2gksrkvadkdfgbeo1f92eomplmd5e8.apps.googleusercontent.com');
   readonly accessToken = signal<string>(localStorage.getItem('luna_gcal_access_token') || '');
   readonly tokenExpiresAt = signal<number>(Number(localStorage.getItem('luna_gcal_token_expires') || '0'));
   readonly isConnected = computed(() => {
@@ -27,15 +28,6 @@ export class GoogleCalendarService {
 
   constructor() {
     this.loadGisScript();
-  }
-
-  /**
-   * 設定 Client ID
-   */
-  setClientId(id: string): void {
-    this.clientId.set(id.trim());
-    localStorage.setItem('luna_gcal_client_id', id.trim());
-    this.tokenClient = null; // 重置 token client 以便用新 ID 初始化
   }
 
   /**

@@ -14,32 +14,15 @@ export class Settings {
   readonly gcalService = inject(GoogleCalendarService);
   private periodService = inject(PeriodService);
 
-  // 用於 input 雙向綁定的暫存值
-  inputClientId = '';
   isSaving = signal(false);
   syncStatusMessage = signal('');
 
-  constructor() {
-    this.inputClientId = this.gcalService.clientId();
-  }
-
-  /**
-   * 儲存 Client ID 變更
-   */
-  saveClientId(): void {
-    this.gcalService.setClientId(this.inputClientId);
-    alert('✓ Client ID 已更新！');
-  }
+  constructor() {}
 
   /**
    * 點擊連結 Google 帳號
    */
   async connectGoogle(): Promise<void> {
-    if (!this.inputClientId) {
-      alert('請先輸入 Google OAuth 用戶端 ID (Client ID)');
-      return;
-    }
-
     try {
       this.isSaving.set(true);
       await this.gcalService.connect();

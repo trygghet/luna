@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { GoogleCalendarService } from '../../services/google-calendar';
@@ -10,14 +10,21 @@ import { PeriodService } from '../../services/period';
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
 })
-export class Settings {
+export class Settings implements OnInit {
   readonly gcalService = inject(GoogleCalendarService);
   private periodService = inject(PeriodService);
 
   isSaving = signal(false);
   syncStatusMessage = signal('');
+  managementStatusMessage = signal('');
 
   constructor() {}
+
+  ngOnInit(): void {
+    if (this.gcalService.isConnected()) {
+      // 已連線時，GoogleCalendarService 會自動尋找或建立 LunaFlow 專屬日曆
+    }
+  }
 
   /**
    * 點擊連結 Google 帳號
@@ -85,4 +92,18 @@ export class Settings {
       this.isSaving.set(false);
     }
   }
+
+  async createLunaFlowCalendar(): Promise<void> {
+    try {
+      this.isSaving.set(true);
+      this.managementStatusMessage.set('建立日曆中...');
+      await this.gcalService.createLunaFlowCalendar();
+      this.managementStatusMessage.set('✓ 已建立 LunaFlow 專屬日曆。');
+    } catch (e: any) {
+      this.managementStatusMessage.set(`建立失敗: ${e.message || e}`);
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
 }

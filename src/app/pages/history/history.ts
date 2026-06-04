@@ -278,6 +278,11 @@ export class History implements OnInit {
     alert('✓ 紀錄已儲存！');
   }
 
+  deletedLogBackup: DailyLog | null = null;
+  undoTimerId: number | null = null;
+  undoMessage: string = '';
+  undoDurationMs = 5000;
+
   /**
    * 刪除當前選中日期的紀錄
    */
@@ -293,16 +298,58 @@ export class History implements OnInit {
       return;
     }
 
-    if (!confirm('確定要刪除這筆紀錄嗎？此操作無法還原。')) {
+    if (!confirm('確定要刪除這筆紀錄嗎？刪除後可在短時間內復原。')) {
       return;
     }
 
+    this.deletedLogBackup = { ...existingLog };
     this.periodService.deleteDailyLog(this.selectedDate);
     this.loadCalendar();
     this.nextPeriodDate = this.periodService.predictNextPeriod();
     this.clearSelection();
+    this.startUndoCountdown();
+  }
 
-    alert('✓ 紀錄已刪除！');
+  private startUndoCountdown(): void {
+    this.clearUndoCountdown();
+    if (!this.deletedLogBackup) {
+      return;
+    }
+
+    this.undoMessage = `已刪除 ${this.deletedLogBackup.date} 的紀錄。5 秒內可復原。`;
+    this.undoTimerId = window.setTimeout(() => {
+      this.clearUndoBackup();
+    }, this.undoDurationMs);
+  }
+
+  private clearUndoCountdown(): void {
+    if (this.undoTimerId !== null) {
+      window.clearTimeout(this.undoTimerId);
+      this.undoTimerId = null;
+    }
+  }
+
+  undoDelete(): void {
+    if (!this.deletedLogBackup) {
+      return;
+    }
+
+    this.periodService.saveDailyLog(this.deletedLogBackup);
+    this.loadCalendar();
+    this.nextPeriodDate = this.periodService.predictNextPeriod();
+    this.selectedDate = this.deletedLogBackup.date;
+    this.selectedDayLog = { ...this.deletedLogBackup };
+    this.clearUndoBackup();
+    this.undoMessage = '已還原刪除的紀錄。';
+    window.setTimeout(() => {
+      this.undoMessage = '';
+    }, 2000);
+  }
+
+  private clearUndoBackup(): void {
+    this.clearUndoCountdown();
+    this.deletedLogBackup = null;
+    this.undoMessage = '';
   }
 
   /**

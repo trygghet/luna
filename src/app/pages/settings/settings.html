@@ -95,10 +95,33 @@
           </div>
         </div>
 
-        <!-- 步驟 3: 一次性同步 -->
+        <!-- 步驟 3: 日曆管理 -->
         <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
           <label class="group-label">
-            <span class="step-badge">3</span> 歷史紀錄手動同步
+            <span class="step-badge">3</span> 日曆管理
+          </label>
+
+          <div class="calendar-management">
+            <p class="management-hint">系統會自動尋找名稱含「LunaFlow」的日曆，若尚未建立則會建立專屬日曆。</p>
+
+            <button
+              class="btn btn-primary btn-large"
+              (click)="createLunaFlowCalendar()"
+              [disabled]="isSaving() || !gcalService.isConnected()"
+            >
+              <i class="fas fa-calendar-plus"></i> 建立 LunaFlow 專屬日曆
+            </button>
+
+            @if (managementStatusMessage()) {
+              <p class="sync-status-msg animate-fade-in">{{ managementStatusMessage() }}</p>
+            }
+          </div>
+        </div>
+
+        <!-- 步驟 4: 一次性同步 -->
+        <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
+          <label class="group-label">
+            <span class="step-badge">4</span> 歷史紀錄手動同步
           </label>
           <div class="sync-action-panel">
             <button
@@ -113,6 +136,7 @@
             }
           </div>
         </div>
+
 
       </div>
     </div>

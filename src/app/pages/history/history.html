@@ -70,6 +70,11 @@
     </div>
   </section>
 
+  <div *ngIf="undoMessage" class="undo-toast">
+    <span>{{ undoMessage }}</span>
+    <button class="btn-undo" (click)="undoDelete()">復原</button>
+  </div>
+
   <!-- 每日紀錄表單 -->
   <section class="daily-log-section" *ngIf="selectedDate">
     <h2>📝 {{ selectedDate }} 的紀錄</h2>

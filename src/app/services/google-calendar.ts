@@ -85,7 +85,10 @@ export class GoogleCalendarService {
 
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: this.clientId(),
-      scope: 'https://www.googleapis.com/auth/calendar.app.created',
+      scope: [
+        'https://www.googleapis.com/auth/calendar.app.created',
+        'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
+      ].join(' '),
       callback: (response: any) => {
         if (response.error) {
           console.error('OAuth 錯誤:', response.error);
@@ -141,7 +144,6 @@ export class GoogleCalendarService {
       throw new Error('Google 帳號未連結或憑證已過期');
     }
 
-    // 若本地已有日曆 ID，先嘗試驗證其是否存在於 Google 雲端
     let calId = this.calendarId();
     if (calId) {
       try {
@@ -154,9 +156,13 @@ export class GoogleCalendarService {
       } catch (e) {
         console.warn('驗證現有日曆失敗，將重試搜尋或建立：', e);
       }
+
+      // 若目前選中的日曆無效，清空儲存值
+      this.calendarId.set('');
+      localStorage.removeItem('luna_gcal_calendar_id');
+      calId = '';
     }
 
-    // 搜尋使用者擁有的所有日曆，尋找名為「LunaFlow 經期追蹤」的日曆
     try {
       const listRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
         headers: { Authorization: `Bearer ${this.accessToken()}` },
@@ -164,11 +170,10 @@ export class GoogleCalendarService {
       if (listRes.ok) {
         const listData = await listRes.json();
         const existingCal = listData.items?.find(
-          (item: any) => item.summary === 'LunaFlow 經期追蹤'
+          (item: any) => this.isLunaFlowCalendar(item)
         );
         if (existingCal) {
-          this.calendarId.set(existingCal.id);
-          localStorage.setItem('luna_gcal_calendar_id', existingCal.id);
+          this.setCalendarId(existingCal.id);
           return existingCal.id;
         }
       }
@@ -176,35 +181,117 @@ export class GoogleCalendarService {
       console.error('搜尋現有日曆清單時發生錯誤:', e);
     }
 
-    // 找不到就建立一個新的專屬日曆
     console.log('未找到專屬日曆，正在建立新的...');
-    try {
-      const createRes = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.accessToken()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          summary: 'LunaFlow 經期追蹤',
-          description: '此日曆由 LunaFlow 應用程式建立，用於同步經期紀錄與預測結果。',
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        }),
+    return this.createLunaFlowCalendar();
+  }
+
+  /**
+   * 取得使用者可讀取的所有日曆清單
+   */
+  async listCalendars(): Promise<any[]> {
+    if (!this.isConnected()) {
+      throw new Error('Google 帳號未連結或憑證已過期');
+    }
+
+    const calendars: any[] = [];
+    let pageToken = '';
+
+    do {
+      const url = `https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250${
+        pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''
+      }`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.accessToken()}` },
       });
 
-      if (!createRes.ok) {
-        const errText = await createRes.text();
-        throw new Error(`無法建立日曆: ${errText}`);
+      if (!res.ok) {
+        throw new Error('取得日曆清單失敗');
       }
 
-      const newCal = await createRes.json();
-      this.calendarId.set(newCal.id);
-      localStorage.setItem('luna_gcal_calendar_id', newCal.id);
-      return newCal.id;
-    } catch (e) {
-      console.error('建立日曆發生例外狀況:', e);
-      throw e;
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        calendars.push(...data.items);
+      }
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+
+    return calendars;
+  }
+
+  /**
+   * 設定目前要使用的日曆 ID
+   */
+  setCalendarId(calendarId: string): void {
+    this.calendarId.set(calendarId);
+    localStorage.setItem('luna_gcal_calendar_id', calendarId);
+  }
+
+  /**
+   * 刪除指定日曆
+   */
+  async deleteCalendar(calendarId: string): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('Google 帳號未連結或憑證已過期');
     }
+
+    const deleteRes = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
+      {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${this.accessToken()}` },
+      }
+    );
+
+    if (!deleteRes.ok) {
+      const errorText = await deleteRes.text();
+      throw new Error(`刪除日曆失敗: ${errorText}`);
+    }
+
+    if (calendarId === this.calendarId()) {
+      this.calendarId.set('');
+      localStorage.removeItem('luna_gcal_calendar_id');
+    }
+  }
+
+  /**
+   * 建立一個 LunaFlow 專屬日曆
+   */
+  async createLunaFlowCalendar(): Promise<string> {
+    if (!this.isConnected()) {
+      throw new Error('Google 帳號未連結或憑證已過期');
+    }
+
+    const createRes = await fetch('https://www.googleapis.com/calendar/v3/calendars', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.accessToken()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        summary: 'LunaFlow 經期追蹤',
+        description: '此日曆由 LunaFlow 應用程式建立，用於同步經期紀錄與預測結果。',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    });
+
+    if (!createRes.ok) {
+      const errText = await createRes.text();
+      throw new Error(`無法建立日曆: ${errText}`);
+    }
+
+    const newCal = await createRes.json();
+    this.setCalendarId(newCal.id);
+    return newCal.id;
+  }
+
+  /**
+   * 判斷是否為本應用建立的 LunaFlow 日曆
+   */
+  private isLunaFlowCalendar(item: any): boolean {
+    if (!item || typeof item.summary !== 'string') {
+      return false;
+    }
+    return item.summary.includes('LunaFlow') || item.description?.includes?.('LunaFlow');
   }
 
   /**
@@ -415,6 +502,72 @@ export class GoogleCalendarService {
     if (predictedDate) {
       await this.syncPrediction(predictedDate);
     }
+  }
+
+  /**
+   * 取得使用者可讀取的所有日曆清單（支援分頁）
+   */
+  private async loadCalendarList(): Promise<any[]> {
+    const calendars: any[] = [];
+    let pageToken = '';
+
+    do {
+      const url = `https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250${
+        pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''
+      }`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.accessToken()}` },
+      });
+
+      if (!res.ok) {
+        throw new Error('取得日曆清單失敗');
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        calendars.push(...data.items);
+      }
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+
+    return calendars;
+  }
+
+  /**
+   * 刪除所有可讀取到的 LunaFlow 日曆
+   */
+  async deleteAllLunaCalendars(): Promise<number> {
+    if (!this.isConnected()) {
+      throw new Error('Google 帳號未連結或憑證已過期');
+    }
+
+    const calendarList = await this.loadCalendarList();
+    const targets = calendarList.filter((item) => this.isLunaFlowCalendar(item));
+    let deletedCount = 0;
+
+    for (const calendar of targets) {
+      try {
+        const deleteRes = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${this.accessToken()}` },
+          }
+        );
+
+        if (deleteRes.ok) {
+          deletedCount++;
+          if (calendar.id === this.calendarId()) {
+            this.calendarId.set('');
+            localStorage.removeItem('luna_gcal_calendar_id');
+          }
+        }
+      } catch (e) {
+        console.error(`刪除日曆 ${calendar.id} 時發生錯誤：`, e);
+      }
+    }
+
+    return deletedCount;
   }
 
   /**

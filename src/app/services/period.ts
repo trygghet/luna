@@ -18,24 +18,29 @@ export interface DailyLog {
 })
 export class PeriodService {
   private gcalService = inject(GoogleCalendarService);
+  private readonly storageKey = 'luna_period_logs';
+  private logs: DailyLog[];
 
   /**
    * mockData 供應初始每日紀錄
    */
-  private mockData: DailyLog[] = [
+  private defaultLogs: DailyLog[] = [
     { date: '2026-05-01', flow: '多', note: '經期第一天' },
     { date: '2026-05-02', flow: '正常', note: '持續中' },
     { date: '2026-05-03', flow: '少', note: '結束前一天' },
   ];
 
-  constructor() {}
+  constructor() {
+    this.logs = this.loadLogsFromStorage() ?? [...this.defaultLogs];
+    this.persistLogs();
+  }
 
   /**
    * 取得特定日期的紀錄
    * @param date YYYY-MM-DD
    */
   getDailyLog(date: string): DailyLog | undefined {
-    return this.mockData.find((log) => log.date === date);
+    return this.logs.find((log) => log.date === date);
   }
 
   /**
@@ -48,15 +53,44 @@ export class PeriodService {
       return;
     }
 
-    const index = this.mockData.findIndex((item) => item.date === log.date);
-    if (index >= 0) {
-      this.mockData[index] = { ...log };
+    const index = this.logs.findIndex((item) => item.date === log.date);
+    if (log.flow === '無') {
+      if (index >= 0) {
+        this.logs.splice(index, 1);
+      }
+    } else if (index >= 0) {
+      this.logs[index] = { ...log };
     } else {
-      this.mockData.push({ ...log });
+      this.logs.push({ ...log });
     }
+
+    this.persistLogs();
 
     // 同步到 Google 日曆
     this.gcalService.syncLog(log).then(() => {
+      const nextPredict = this.predictNextPeriod();
+      this.gcalService.syncPrediction(nextPredict);
+    });
+  }
+
+  /**
+   * 刪除特定日期的紀錄
+   */
+  deleteDailyLog(date: string): void {
+    if (!this.isValidDate(date)) {
+      console.error('日期格式不正確，應為 YYYY-MM-DD');
+      return;
+    }
+
+    const index = this.logs.findIndex((item) => item.date === date);
+    if (index < 0) {
+      return;
+    }
+
+    this.logs.splice(index, 1);
+    this.persistLogs();
+
+    this.gcalService.syncLog({ date, flow: '無', note: '' }).then(() => {
       const nextPredict = this.predictNextPeriod();
       this.gcalService.syncPrediction(nextPredict);
     });
@@ -70,7 +104,7 @@ export class PeriodService {
     const monthString = String(month).padStart(2, '0');
     const yearString = String(year);
 
-    this.mockData.forEach((item) => {
+    this.logs.forEach((item) => {
       if (item.date.startsWith(`${yearString}-${monthString}`)) {
         logs.set(item.date, item);
       }
@@ -79,12 +113,40 @@ export class PeriodService {
     return logs;
   }
 
+  private loadLogsFromStorage(): DailyLog[] | null {
+    try {
+      const raw = localStorage.getItem(this.storageKey);
+      if (!raw) {
+        return null;
+      }
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) {
+        return null;
+      }
+      return parsed.filter(
+        (item): item is DailyLog =>
+          item && typeof item.date === 'string' && typeof item.flow === 'string' && typeof item.note === 'string'
+      );
+    } catch (error) {
+      console.warn('讀取月經紀錄時，localStorage 資料格式錯誤，已重置。', error);
+      return null;
+    }
+  }
+
+  private persistLogs(): void {
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(this.logs));
+    } catch (error) {
+      console.error('儲存月經紀錄到 localStorage 失敗', error);
+    }
+  }
+
   /**
    * 預測下次月經日期
    * 取最後一筆非「無」流量日期，往後推 28 天
    */
   predictNextPeriod(): string {
-    const sortedLogs = [...this.mockData]
+    const sortedLogs = [...this.logs]
       .filter((item) => item.flow !== '無')
       .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
@@ -99,7 +161,7 @@ export class PeriodService {
    * 取得所有紀錄（方便 Debug）
    */
   getAllLogs(): DailyLog[] {
-    return [...this.mockData].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+    return [...this.logs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   }
 
   private isValidDate(dateString: string): boolean {

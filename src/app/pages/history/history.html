@@ -107,6 +107,9 @@
         <button class="btn-save" (click)="saveDailyLog()">
           <i class="fas fa-save"></i> 儲存紀錄
         </button>
+        <button class="btn-delete" *ngIf="hasSelectedRecord()" (click)="deleteSelectedDayLog()">
+          <i class="fas fa-trash-alt"></i> 刪除紀錄
+        </button>
         <button class="btn-cancel" (click)="clearSelection()">
           <i class="fas fa-times"></i> 取消
         </button>

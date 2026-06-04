@@ -9,7 +9,7 @@ declare const google: any;
 export class GoogleCalendarService {
   // 狀態訊號 (Signals)
   // 開發者申請的 Google OAuth 用戶端 ID
-  readonly clientId = signal<string>('972944322479-7e2gksrkvadkdfgbeo1f92eomplmd5e8.apps.googleusercontent.com');
+  readonly clientId = signal<string>('1043320944909-4o23ljp511sl168c7e736m6cddko446f.apps.googleusercontent.com');
   readonly accessToken = signal<string>(localStorage.getItem('luna_gcal_access_token') || '');
   readonly tokenExpiresAt = signal<number>(Number(localStorage.getItem('luna_gcal_token_expires') || '0'));
   readonly isConnected = computed(() => {

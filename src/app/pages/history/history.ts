@@ -249,6 +249,13 @@ export class History implements OnInit {
   }
 
   /**
+   * 判斷目前選中的日期是否已有已儲存紀錄
+   */
+  hasSelectedRecord(): boolean {
+    return this.selectedDate ? !!this.periodService.getDailyLog(this.selectedDate) : false;
+  }
+
+  /**
    * 儲存當前選中日期的紀錄
    */
   saveDailyLog(): void {
@@ -269,6 +276,33 @@ export class History implements OnInit {
 
     // 用戶反饋
     alert('✓ 紀錄已儲存！');
+  }
+
+  /**
+   * 刪除當前選中日期的紀錄
+   */
+  deleteSelectedDayLog(): void {
+    if (!this.selectedDate) {
+      alert('請先選擇要刪除的日期');
+      return;
+    }
+
+    const existingLog = this.periodService.getDailyLog(this.selectedDate);
+    if (!existingLog) {
+      alert('此日期沒有可刪除的紀錄');
+      return;
+    }
+
+    if (!confirm('確定要刪除這筆紀錄嗎？此操作無法還原。')) {
+      return;
+    }
+
+    this.periodService.deleteDailyLog(this.selectedDate);
+    this.loadCalendar();
+    this.nextPeriodDate = this.periodService.predictNextPeriod();
+    this.clearSelection();
+
+    alert('✓ 紀錄已刪除！');
   }
 
   /**

@@ -489,3 +489,14 @@ $card-shadow: 0 8px 32px 0 rgba(255, 107, 139, 0.08);
     transform: translateY(0);
   }
 }
+
+.sync-buttons-row {
+  display: flex;
+  gap: 1.25rem;
+  width: 100%;
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+}

@@ -158,6 +158,25 @@ export class PeriodService {
   }
 
   /**
+   * 匯入/合併從 Google 日曆取得的紀錄，並儲存至本機
+   */
+  importLogs(importedLogs: DailyLog[]): void {
+    if (!Array.isArray(importedLogs)) return;
+
+    importedLogs.forEach((imported) => {
+      const index = this.logs.findIndex((local) => local.date === imported.date);
+      if (index >= 0) {
+        // 若本機已存在該日期的紀錄，直接以日曆為準覆蓋
+        this.logs[index] = { ...imported };
+      } else {
+        this.logs.push({ ...imported });
+      }
+    });
+
+    this.persistLogs();
+  }
+
+  /**
    * 取得所有紀錄（方便 Debug）
    */
   getAllLogs(): DailyLog[] {

@@ -93,6 +93,36 @@ export class Settings implements OnInit {
     }
   }
 
+  /**
+   * 一次性手動從 Google 日曆匯入/還原所有歷史紀錄
+   */
+  async importAllHistory(): Promise<void> {
+    if (!this.gcalService.isConnected()) {
+      alert('請先連結 Google 帳號！');
+      return;
+    }
+
+    if (!confirm('此操作會將 Google 日曆上的經期行程與本機合併。若日期重複，將以 Google 日曆上的資料為準，確定要匯入嗎？')) {
+      return;
+    }
+
+    try {
+      this.isSaving.set(true);
+      this.syncStatusMessage.set('正在從日曆匯入歷史資料，請稍候...');
+
+      const importedLogs = await this.gcalService.importFromCalendar();
+      this.periodService.importLogs(importedLogs);
+
+      this.syncStatusMessage.set(`✓ 匯入成功！已從 Google 日曆成功匯入 ${importedLogs.length} 筆經期紀錄。`);
+      alert(`✓ 匯入成功！共匯入 ${importedLogs.length} 筆經期紀錄。`);
+    } catch (e: any) {
+      this.syncStatusMessage.set(`❌ 匯入失敗: ${e.message || e}`);
+      alert(`匯入發生錯誤: ${e.message || e}`);
+    } finally {
+      this.isSaving.set(false);
+    }
+  }
+
   async createLunaFlowCalendar(): Promise<void> {
     try {
       this.isSaving.set(true);

@@ -145,22 +145,19 @@ export class GoogleCalendarService {
     }
 
     let calId = this.calendarId();
+    let verifiedCalExists = false;
+
     if (calId) {
       try {
         const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calId}`, {
           headers: { Authorization: `Bearer ${this.accessToken()}` },
         });
         if (res.ok) {
-          return calId;
+          verifiedCalExists = true;
         }
       } catch (e) {
         console.warn('驗證現有日曆失敗，將重試搜尋或建立：', e);
       }
-
-      // 若目前選中的日曆無效，清空儲存值
-      this.calendarId.set('');
-      localStorage.removeItem('luna_gcal_calendar_id');
-      calId = '';
     }
 
     try {
@@ -169,16 +166,46 @@ export class GoogleCalendarService {
       });
       if (listRes.ok) {
         const listData = await listRes.json();
-        const existingCal = listData.items?.find(
+        const existingCals = listData.items?.filter(
           (item: any) => this.isLunaFlowCalendar(item)
-        );
-        if (existingCal) {
-          this.setCalendarId(existingCal.id);
-          return existingCal.id;
+        ) || [];
+
+        if (existingCals.length > 0) {
+          // 決定保留哪一個日曆
+          // 如果目前的 calId 是驗證有效的，保留它；否則保留找到的第一個
+          let primaryCal = existingCals.find((item: any) => item.id === calId && verifiedCalExists);
+          if (!primaryCal) {
+            primaryCal = existingCals[0];
+          }
+
+          // 刪除所有其他重複的 LunaFlow 日曆
+          for (const cal of existingCals) {
+            if (cal.id !== primaryCal.id) {
+              console.log(`發現重複的日曆，正在刪除: ${cal.summary} (${cal.id})`);
+              try {
+                await fetch(
+                  `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(cal.id)}`,
+                  {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${this.accessToken()}` },
+                  }
+                );
+              } catch (err) {
+                console.error(`刪除重複日曆失敗: ${cal.id}`, err);
+              }
+            }
+          }
+
+          this.setCalendarId(primaryCal.id);
+          return primaryCal.id;
         }
       }
     } catch (e) {
-      console.error('搜尋現有日曆清單時發生錯誤:', e);
+      console.error('搜尋現有日曆清單或清理重複時發生錯誤:', e);
+    }
+
+    if (verifiedCalExists && calId) {
+      return calId;
     }
 
     console.log('未找到專屬日曆，正在建立新的...');
@@ -502,6 +529,75 @@ export class GoogleCalendarService {
     if (predictedDate) {
       await this.syncPrediction(predictedDate);
     }
+  }
+
+  /**
+   * 從 Google 日曆匯入歷史經期紀錄 (反向同步)
+   */
+  async importFromCalendar(): Promise<DailyLog[]> {
+    if (!this.isConnected()) {
+      throw new Error('Google 帳號未連結或憑證已過期');
+    }
+
+    const calId = await this.ensureLunaCalendar();
+    const importedLogs: DailyLog[] = [];
+    let pageToken = '';
+
+    do {
+      const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?maxResults=250${
+        pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''
+      }`;
+      const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.accessToken()}` },
+      });
+
+      if (!res.ok) {
+        throw new Error('讀取日曆事件失敗');
+      }
+
+      const data = await res.json();
+      if (Array.isArray(data.items)) {
+        for (const item of data.items) {
+          // 判斷是否為經期紀錄事件
+          const isLog = item.extendedProperties?.private?.type === 'log';
+          const isSummaryMatch = item.summary && item.summary.startsWith('🩸 LunaFlow');
+          
+          if (isLog || isSummaryMatch) {
+            let flow: '無' | '少' | '正常' | '多' = '正常';
+            let date = item.start?.date || '';
+            let note = item.description || '';
+            if (note === '無備忘紀錄') {
+              note = '';
+            }
+
+            // 優先從 extendedProperties 解析 flow 和 date
+            if (item.extendedProperties?.private?.flow) {
+              flow = item.extendedProperties.private.flow;
+            } else if (item.summary) {
+              // 從 summary 解析: "🩸 LunaFlow (流量: 少)" -> "少"
+              const match = item.summary.match(/流量:\s*([^)]+)/);
+              if (match && match[1]) {
+                const f = match[1].trim();
+                if (f === '少' || f === '正常' || f === '多' || f === '無') {
+                  flow = f;
+                }
+              }
+            }
+
+            if (item.extendedProperties?.private?.date) {
+              date = item.extendedProperties.private.date;
+            }
+
+            if (date && flow !== '無') {
+              importedLogs.push({ date, flow, note });
+            }
+          }
+        }
+      }
+      pageToken = data.nextPageToken || '';
+    } while (pageToken);
+
+    return importedLogs;
   }
 
   /**

@@ -372,24 +372,46 @@ export class History implements OnInit {
   }
 
   /**
-   * 取得月份和年份的顯示文本
-   * @returns string
+   * 取得月份選項
    */
-  getMonthYearDisplay(): string {
-    const monthNames = [
-      '一月',
-      '二月',
-      '三月',
-      '四月',
-      '五月',
-      '六月',
-      '七月',
-      '八月',
-      '九月',
-      '十月',
-      '十一月',
-      '十二月',
+  getMonthOptions(): string[] {
+    return [
+      '一月', '二月', '三月', '四月', '五月', '六月',
+      '七月', '八月', '九月', '十月', '十一月', '十二月'
     ];
-    return `${this.currentYear} 年 ${monthNames[this.currentMonth - 1]}`;
+  }
+
+  /**
+   * 取得年份選項（前後各5年）
+   */
+  getYearOptions(): number[] {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+      years.push(i);
+    }
+    return years;
+  }
+
+  /**
+   * 處理月份改變
+   */
+  onMonthChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.currentMonth = parseInt(target.value);
+    this.selectedDate = null;
+    this.selectedDayLog = { date: '', flow: '無', note: '' };
+    this.loadCalendar();
+  }
+
+  /**
+   * 處理年份改變
+   */
+  onYearChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.currentYear = parseInt(target.value);
+    this.selectedDate = null;
+    this.selectedDayLog = { date: '', flow: '無', note: '' };
+    this.loadCalendar();
   }
 }

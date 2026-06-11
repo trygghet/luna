@@ -12,7 +12,18 @@
       <button class="btn-month" (click)="previousMonth()" title="上一個月">
         <i class="fas fa-chevron-left"></i>
       </button>
-      <div class="month-display">{{ getMonthYearDisplay() }}</div>
+      <div class="month-year-selector">
+        <select class="month-select" (change)="onMonthChange($event)">
+          <option *ngFor="let m of getMonthOptions(); let i = index" [value]="i + 1" [selected]="currentMonth === i + 1">
+            {{ m }}
+          </option>
+        </select>
+        <select class="year-select" (change)="onYearChange($event)">
+          <option *ngFor="let y of getYearOptions()" [value]="y" [selected]="currentYear === y">
+            {{ y }}
+          </option>
+        </select>
+      </div>
       <button class="btn-month" (click)="nextMonth()" title="下一個月">
         <i class="fas fa-chevron-right"></i>
       </button>

@@ -34,7 +34,9 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.scss"]
+            "styles": [
+              "src/styles.scss"
+            ]
           },
           "configurations": {
             "production": {
@@ -75,6 +77,14 @@
         },
         "test": {
           "builder": "@angular/build:unit-test"
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy",
+          "options": {
+            "baseHref": "/luna/",
+            "name": "trygghet",
+            "email": "s311226@gm.fdhs.tyc.edu.tw"
+          }
         }
       }
     }

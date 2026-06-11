@@ -55,7 +55,7 @@
         </div>
 
         <!-- 步驟 2: 同步設定 (僅在已連線時可用) -->
-        <div class="settings-group" [class.disabled-opacity]="!gcalService.isConnected()">
+        <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
           <label class="group-label">
             <span class="step-badge">2</span> 同步選項設定
           </label>
@@ -94,58 +94,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 步驟 3: 日曆管理 -->
-        <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
-          <label class="group-label">
-            <span class="step-badge">3</span> 日曆管理
-          </label>
-
-          <div class="calendar-management">
-            <p class="management-hint">系統會自動尋找名稱含「LunaFlow」的日曆，若尚未建立則會建立專屬日曆。</p>
-
-            <button
-              class="btn btn-primary btn-large"
-              (click)="createLunaFlowCalendar()"
-              [disabled]="isSaving() || !gcalService.isConnected()"
-            >
-              <i class="fas fa-calendar-plus"></i> 建立 LunaFlow 專屬日曆
-            </button>
-
-            @if (managementStatusMessage()) {
-              <p class="sync-status-msg animate-fade-in">{{ managementStatusMessage() }}</p>
-            }
-          </div>
-        </div>
-
-        <!-- 步驟 4: 歷史紀錄手動同步與匯入 -->
-        <div class="settings-group last-group" [class.disabled-opacity]="!gcalService.isConnected()">
-          <label class="group-label">
-            <span class="step-badge">4</span> 歷史紀錄手動同步與還原
-          </label>
-          <div class="sync-action-panel">
-            <div class="sync-buttons-row">
-              <button
-                class="btn btn-success btn-large"
-                (click)="syncAllHistory()"
-                [disabled]="isSaving() || !gcalService.isConnected()"
-              >
-                <i class="fas fa-cloud-upload-alt" [class.fa-spin]="isSaving() && syncStatusMessage().includes('同步')"></i> 立即同步至 Google 日曆
-              </button>
-              <button
-                class="btn btn-secondary btn-large"
-                (click)="importAllHistory()"
-                [disabled]="isSaving() || !gcalService.isConnected()"
-              >
-                <i class="fas fa-cloud-download-alt" [class.fa-spin]="isSaving() && syncStatusMessage().includes('匯入')"></i> 從 Google 日曆匯入還原
-              </button>
-            </div>
-            @if (syncStatusMessage()) {
-              <p class="sync-status-msg animate-fade-in">{{ syncStatusMessage() }}</p>
-            }
-          </div>
-        </div>
-
 
       </div>
     </div>

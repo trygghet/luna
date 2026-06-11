@@ -23,6 +23,9 @@ export class GoogleCalendarService {
   readonly syncPredictionsEnabled = signal<boolean>(localStorage.getItem('luna_sync_predictions') !== 'false');
   readonly calendarId = signal<string>(localStorage.getItem('luna_gcal_calendar_id') || '');
 
+  // 連線成功的回呼掛鉤
+  onConnectSuccess?: () => void;
+
   private gisLoaded = false;
   private tokenClient: any = null;
 
@@ -105,6 +108,9 @@ export class GoogleCalendarService {
         // 登入成功後，自動檢查/建立專屬日曆
         this.ensureLunaCalendar().then(() => {
           console.log('專屬日曆已備妥，ID為:', this.calendarId());
+          if (this.onConnectSuccess) {
+            this.onConnectSuccess();
+          }
         });
       },
     });

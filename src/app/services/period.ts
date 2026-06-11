@@ -33,6 +33,40 @@ export class PeriodService {
   constructor() {
     this.logs = this.loadLogsFromStorage() ?? [...this.defaultLogs];
     this.persistLogs();
+
+    // 註冊連線成功的回呼，進行自動同步
+    this.gcalService.onConnectSuccess = () => {
+      this.autoSync();
+    };
+
+    // 啟動時若已連線，自動執行背景雙向同步
+    if (this.gcalService.isConnected()) {
+      this.autoSync();
+    }
+  }
+
+  /**
+   * 自動進行雙向同步（匯出本機紀錄 & 匯入日曆紀錄）
+   */
+  async autoSync(): Promise<void> {
+    try {
+      console.log('開始自動同步 Google 日曆...');
+      // 1. 確保日曆存在並且已清理重複
+      await this.gcalService.ensureLunaCalendar();
+
+      // 2. 從 Google 日曆匯入並合併至本機
+      const importedLogs = await this.gcalService.importFromCalendar();
+      this.importLogs(importedLogs);
+
+      // 3. 將本機所有歷史紀錄與預估經期寫回 Google 日曆
+      const allLogs = this.getAllLogs();
+      const nextPredict = this.predictNextPeriod();
+      await this.gcalService.syncAllHistory(allLogs, nextPredict);
+      
+      console.log('✓ Google 日曆自動雙向同步完成。');
+    } catch (e) {
+      console.error('Google 日曆自動同步失敗:', e);
+    }
   }
 
   /**

@@ -1,4 +1,21 @@
-﻿<!-- Main Content Area -->
+@if (isLoading()) {
+  <div class="loading-overlay">
+    <div class="loader-content">
+      <div class="moon-loader">
+        <div class="crescent"></div>
+        <div class="stars">
+          <i class="fas fa-star star-1"></i>
+          <i class="fas fa-star star-2"></i>
+          <i class="fas fa-star star-3"></i>
+        </div>
+      </div>
+      <h2 class="app-logo-text">LunaFlow</h2>
+      <p class="quote-text">{{ randomQuote() }}</p>
+    </div>
+  </div>
+}
+
+<!-- Main Content Area -->
 <main class="main-content">
   <router-outlet></router-outlet>
 </main>

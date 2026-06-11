@@ -76,7 +76,7 @@
   </div>
 
   <!-- 每日紀錄表單 -->
-  <section class="daily-log-section" *ngIf="selectedDate">
+  <section class="daily-log-section" #dailyLogSection *ngIf="selectedDate">
     <h2>📝 {{ selectedDate }} 的紀錄</h2>
     <div class="log-form">
       <!-- 流量選擇 -->

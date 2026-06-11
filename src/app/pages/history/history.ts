@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PeriodService, DailyLog } from '../../services/period';
@@ -14,6 +14,8 @@ import { PeriodService, DailyLog } from '../../services/period';
   styleUrls: ['./history.scss'],
 })
 export class History implements OnInit {
+  @ViewChild('dailyLogSection') dailyLogSection!: ElementRef;
+
   /** 當前顯示的年份 */
   currentYear: number = new Date().getFullYear();
 
@@ -166,6 +168,11 @@ export class History implements OnInit {
         note: '',
       };
     }
+
+    // 自動滾動到輸入表單
+    setTimeout(() => {
+      this.dailyLogSection?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 0);
   }
 
   /**
